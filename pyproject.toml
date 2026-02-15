@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentmolt"
+version = "0.2.0"
+description = "AgentMolt — Control plane for AI agent teams. Monitor, govern, and kill-switch your AI agents."
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.8"
+authors = [
+    {name = "AgentMolt", email = "hello@agentmolt.dev"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+keywords = ["ai", "agents", "monitoring", "governance", "control-plane", "kill-switch"]
+
+[project.optional-dependencies]
+async = ["aiohttp>=3.8"]
+cli = ["click>=8.0"]
+all = ["aiohttp>=3.8", "click>=8.0"]
+
+[project.scripts]
+agentmolt = "agentmolt.cli:main"
+
+[project.urls]
+Homepage = "https://agentmolt.dev"
+Documentation = "https://agentmolt.dev/quickstart.html"
+Repository = "https://github.com/saltyprojects/agentmolt-python-sdk"
+Issues = "https://github.com/saltyprojects/agentmolt-python-sdk/issues"
+
+[tool.setuptools.packages.find]
+include = ["agentmolt*"]
+
+[tool.setuptools.package-data]
+agentmolt = ["py.typed"]
