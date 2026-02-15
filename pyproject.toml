@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentmolt"
-version = "0.2.0"
+version = "0.3.0"
 description = "AgentMolt — Control plane for AI agent teams. Monitor, govern, and kill-switch your AI agents."
 readme = "README.md"
 license = {text = "Apache-2.0"}

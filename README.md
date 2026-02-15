@@ -1,163 +1,99 @@
-# 🛡️ AgentMolt Python SDK
+# 🔥 AgentMolt — Control Plane for AI Agent Teams
 
-Control plane for AI agent teams. Monitor, govern, and kill-switch your AI agents.
+Monitor, govern, and kill-switch your AI agents. Works **fully offline** with local storage, or connect to the AgentMolt cloud API.
 
-## Install
+## Quick Start (Local — No API Key Needed!)
 
 ```bash
 pip install agentmolt
-
-# With async support
-pip install agentmolt[async]
-
-# With CLI
-pip install agentmolt[cli]
-
-# Everything
-pip install agentmolt[all]
+agentmolt init
 ```
 
-## Quick Start
-
 ```python
-from agentmolt import AgentMolt
+from agentmolt import AgentMoltLocal
 
-am = AgentMolt(api_key="am_...")
+am = AgentMoltLocal()
 
 # Register an agent
-agent = am.register_agent("my-research-bot", model="gpt-4")
-print(f"Agent ID: {agent.id}")  # Typed dataclass, not raw dict!
+agent = am.register_agent("my-agent", model="gpt-4")
 
 # Log events
-am.log_event(agent.id, action="web_search", target="arxiv.org")
+am.log_event(agent.id, action="tool_call", target="search_api")
 
 # Log metrics
-am.log_metric(agent.id, tokens_used=1500, cost=0.045, tool_calls=3)
+am.log_metric(agent.id, tokens_used=500, cost=0.01)
 
-# Check policy
-policy = am.check_policy(agent.id, action="send_email")
-if policy.allowed:
-    send_email()
+# Check policies
+result = am.check_policy(agent.id, "delete_files")
+if not result.allowed:
+    print(f"Blocked: {result.reason}")
 
 # Kill switch
 am.kill(agent.id)
 ```
 
-## Environment Variables
-
-Set `AGENTMOLT_API_KEY` and `AGENTMOLT_BASE_URL` to skip passing them explicitly:
-
-```bash
-export AGENTMOLT_API_KEY=am_...
-export AGENTMOLT_BASE_URL=https://your-instance.com
-```
-
-```python
-am = AgentMolt()  # reads from env
-```
-
-## Context Manager
-
-```python
-with AgentMolt(api_key="am_...") as am:
-    agent = am.register_agent("bot")
-```
-
-## Async Client
-
-```python
-from agentmolt.async_client import AsyncAgentMolt
-
-async with AsyncAgentMolt(api_key="am_...") as am:
-    agent = await am.register_agent("async-bot")
-    await am.log_event(agent.id, action="search")
-```
-
-## Decorators — Auto-Monitor Functions
-
-```python
-from agentmolt import AgentMolt, monitor
-
-am = AgentMolt(api_key="am_...")
-
-@monitor(am, agent_id="agent-123")
-def search(query: str) -> str:
-    return do_search(query)
-
-# Automatically logs events + metrics when search() is called
-search("latest papers")
-```
-
-## Kill Switch — Background Polling
-
-```python
-from agentmolt import AgentMolt, KillSwitch
-
-am = AgentMolt(api_key="am_...")
-ks = KillSwitch(am, agent_id="agent-123", poll_interval=5)
-ks.start()
-
-# Your agent runs normally...
-# If someone kills it via the dashboard, SystemExit is raised automatically.
-# Custom handler:
-ks = KillSwitch(am, "agent-123", on_kill=lambda: cleanup_and_exit())
-```
-
-## Hooks / Middleware
-
-```python
-from agentmolt.hooks import logging_hook_pre, logging_hook_post, timing_hook
-
-am = AgentMolt(api_key="am_...")
-am.add_hook("pre", logging_hook_pre)
-am.add_hook("post", logging_hook_post)
-
-pre, post = timing_hook()
-am.add_hook("pre", pre)
-am.add_hook("post", post)
-```
-
 ## CLI
 
 ```bash
-# List agents
-agentmolt agents list
-
-# Get agent details
-agentmolt agents get <agent-id>
-
-# Kill an agent
-agentmolt kill <agent-id>
-
-# Check status
-agentmolt status <agent-id>
+agentmolt init                    # Initialize local database
+agentmolt agents                  # List all agents
+agentmolt events <agent_id>      # Show events for an agent
+agentmolt kill <agent_id>        # Kill an agent
+agentmolt status                  # Summary stats
+agentmolt policy add denylist delete_files   # Block an action
+agentmolt policy add cost_limit 10.00        # Set cost limit
+agentmolt policy add token_limit 100000      # Set token limit
+agentmolt policy list             # List all policy rules
 ```
 
-## Retry & Error Handling
+## Policy Engine
 
-The client automatically retries on 429/5xx errors with exponential backoff (default 3 retries). All API errors raise typed exceptions:
+Built-in policy rules, no server required:
+
+- **denylist** — Block specific actions
+- **allowlist** — Only allow listed actions (if any allowlist rule exists, unlisted actions are denied)
+- **cost_limit** — Block when cumulative cost exceeds threshold
+- **token_limit** — Block when cumulative tokens exceed threshold
 
 ```python
-from agentmolt import AgentMoltError, AuthenticationError, NotFoundError
+am.add_policy("denylist", "delete_files")
+am.add_policy("cost_limit", "5.00")
 
-try:
-    am.get_agent("nonexistent")
-except NotFoundError:
-    print("Agent not found")
-except AgentMoltError as e:
-    print(f"API error {e.status_code}: {e}")
+result = am.check_policy(agent.id, "delete_files")
+# PolicyResult(allowed=False, reason="Action 'delete_files' is denied by policy ...")
 ```
 
-## Typed Models
+## Remote API (Advanced)
 
-All responses return typed dataclasses (`Agent`, `Event`, `Metric`, `PolicyResult`) instead of raw dicts. Full PEP 561 typing support with `py.typed` marker.
-
-## Self-Hosted
+For team dashboards and cloud features, use the remote client:
 
 ```python
-am = AgentMolt(api_key="am_...", base_url="https://your-instance.com")
+from agentmolt import AgentMolt
+
+am = AgentMolt(api_key="am_...")  # or set AGENTMOLT_API_KEY env var
+agent = am.register_agent("my-agent", model="gpt-4")
 ```
+
+## Installation
+
+```bash
+pip install agentmolt           # Core (zero dependencies)
+pip install agentmolt[cli]      # CLI support (adds click)
+pip install agentmolt[async]    # Async client (adds aiohttp)
+pip install agentmolt[all]      # Everything
+```
+
+## Features
+
+- 🏠 **Local-first** — SQLite storage, works offline
+- 🔌 **Zero dependencies** — stdlib only for core
+- 🛡️ **Policy engine** — allowlist, denylist, cost/token limits
+- 🔴 **Kill switch** — stop agents instantly
+- 📊 **Metrics** — track tokens, costs, tool calls
+- 📝 **Event logging** — full audit trail
+- 🌐 **Remote API** — optional cloud dashboard
+- 🐍 **Python 3.8+** compatible
 
 ## License
 
-Apache 2.0
+Apache-2.0

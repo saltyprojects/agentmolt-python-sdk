@@ -1,14 +1,16 @@
 """AgentMolt — Control plane for AI agent teams."""
 
 from .client import AgentMolt
+from .local import AgentMoltLocal
 from .exceptions import AgentMoltError, AuthenticationError, NotFoundError, PolicyDeniedError
 from .models import Agent, Event, Metric, PolicyResult
 from .decorators import monitor
 from .killswitch import KillSwitch
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     "AgentMolt",
+    "AgentMoltLocal",
     "AgentMoltError",
     "AuthenticationError",
     "NotFoundError",
